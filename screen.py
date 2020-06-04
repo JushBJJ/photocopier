@@ -63,6 +63,16 @@ class Screen_Cursor:
 		self.y+=y
 		return self.to_pos(self.x, self.y)
 
+	def pos_left(self, x=1):
+		# Moves the cursor left by x
+		self.x-=x
+		return self.to_pos(self.x, self.y)
+
+	def pos_right(self, x=1):
+		# Moves the cursor right by x
+		self.x+=x
+		return self.to_pos(self.x, self.y)
+
 class Screen:
 	"""
 		Screen class basically initialises the screen which will modify stdout
@@ -174,3 +184,6 @@ class Screen:
 	def get_height(self):
 		# Get the amount of lines of th terminal (constantly updated automatically)
 		return os.get_terminal_size()[1]-1
+
+	def input(self, screen, limit=1000):
+		return get_input.get_key(screen, limit)
