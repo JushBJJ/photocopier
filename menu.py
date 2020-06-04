@@ -21,7 +21,7 @@ class menu_screen:
 
         self.information=information
 
-    def add_menu(self, name, function_address, newline=False):
+    def add_menu(self, name, function_address, args, newline=False):
         # Adds a menu for menu selecting
         if len(self.menus.keys())==0:
             self.menus[name]={}
@@ -49,6 +49,7 @@ class menu_screen:
         
         # When the cursor moves up or down, it needs to stay at the same place but y is changed.
         line=self.menus[name]["y"]
+        self.menus[name]["args"]=args
 
         if line not in self.lines: self.lines[line]={}
         self.lines[line][len(self.lines[line])]=self.menus[name]
@@ -100,6 +101,8 @@ class menu_screen:
         last_menu=self.lines[last_y][last_id] # First menu is automatically in line 3, id 0
 
         while True:
+            self.print_menu()
+            self.debug_write(f"Press WASD or arrow keys to move, press Enter to select a menu.")
             # Pre-define the next movements on whatever the user presses.
             pre_move={
                 "Up": (last_y-1, last_id),
@@ -110,15 +113,17 @@ class menu_screen:
 
             key=self.screen.input_movement()
 
-            import time
-            start_time=time.time()
-
             # last_menu shares the same memory address as the original defined in add_menu function
             # magical memories!
             if key=="Return":
-                last_menu["address"]()
+                self.screen.clear_screen()
+                last_menu["address"](last_menu["args"])
                 self.screen.clear_screen()
                 continue
+            elif key=="quit":
+                self.screen.clear_screen()
+                return
+                
             else:
                 # This is to stop the user from selecting non-existant menu thingys
                 y=pre_move[key][0]
@@ -136,10 +141,6 @@ class menu_screen:
 
                     last_menu=self.lines[last_y][last_id]
                     last_menu["selected"]=True
-            
-            self.print_menu()
-            self.debug_write(f"Time: {time.time()-start_time}")
-
 
     def print_menu(self):
         # self.screen is used so it goes to the same addresses.
@@ -170,11 +171,11 @@ class menu_screen:
         self.screen.pre_write(left)
 
         # Title
-        self.screen.local_cursor.to_pos(max_x/2, 1)
+        self.screen.local_cursor.to_pos(max_x/2-len(center)/2, 1)
         self.screen.pre_write(center)
 
         # Right information
-        self.screen.local_cursor.to_pos(max_x-len(self.information[0])-1, 1)
+        self.screen.local_cursor.to_pos(max_x-len(self.information[0])/2-1, 1)
         self.screen.pre_write(right)
 
         self.screen.pre_write("\n"+"_"*max_x+"\n")
@@ -203,13 +204,3 @@ class menu_screen:
 
 def yes():
     print("yes")
-
-scr=screen.Screen()
-menu1=menu_screen(scr, "testing", ["Credits: x", "Title", "Username"])
-
-menu1.add_menu("123", yes)
-menu1.add_menu("456", yes)
-menu1.add_menu("789", yes, newline=True)
-menu1.add_menu("testing 123 yeyasdyasd", yes)
-menu1.print_menu()
-menu1.select_menu()
