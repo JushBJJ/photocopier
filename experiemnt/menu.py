@@ -109,7 +109,7 @@ class menu_screen:
             last_menu["selected"]=True
 
             self.print_menu()
-            self.debug_write(f"Press WASD or arrow keys to move, press Enter to select a menu. Press q to exit")
+            self.debug_write(f"Press WASD or arrow keys to move, press Enter to select a menu.")
             # Pre-define the next movements on whatever the user presses.
             pre_move={
                 "Up": (last_y-1, last_id),
@@ -129,7 +129,7 @@ class menu_screen:
 
                 if ret==False:
                     return ret, info
-                elif ret==True:
+                else:
                     continue
             elif key=="quit":
                 self.screen.clear_screen()
