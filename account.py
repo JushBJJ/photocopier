@@ -1,190 +1,177 @@
+""" Account management """
+
 import json
 import hashlib
 import os
+from typing import Dict
 import draw
-import Home
 
-users={}
-photocopier={}
 
-file_path=os.path.join(os.environ["HOMEPATH"],"Desktop\\Accounts.json") # File location.
-photocopier_path=os.path.join(os.environ["HOMEPATH"],"Desktop\\Photocopier.json")
+user: Dict[None, None] = {}
+photocopier: Dict[None, None] = {}
 
-def update_file(users, photocopier):
+# File location.
+file_Path = os.path.join(os.environ["HOMEPATH"], "Desktop\\Accounts.json")
+photocopier_Path = os.path.join(
+    os.environ["HOMEPATH"], "Desktop\\Photocopier.json")
+
+
+def update_file(users, _photocopier):
     fix_file()
 
-    with open(file_path, "w") as f:
+    with open(file_Path, "w") as f:
         f.write(json.dumps(users))
-    
-    with open(photocopier_path, "w") as f:
-        f.write(json.dumps(photocopier))
+
+    with open(photocopier_Path, "w") as f:
+        f.write(json.dumps(_photocopier))
 
 def fix_file():
-    x=True
+    _accounts = None
+    _photocopier = None
 
     try:
-        with open(file_path, "r") as f:
-            json.loads(f.read())
-        with open(photocopier_path, "r") as f:
-            json.loads(f.read())
-    except:
-        with open(file_path, "w") as f:
-            f.write(json.dumps(
-                {"Admin":
-                    {"Password": hashlib.sha256("admin".encode()).hexdigest(),
-                        "Credits":1000
-                    }
-                })
-            )
+        with open(file_Path, "r") as users_File:
+            _accounts = json.loads(users_File.read())
 
-        with open(photocopier_path, "w") as f:
-            f.write(json.dumps(
-                {"Ink": 100,
-                "Log":{}}
-            ))
+        with open(photocopier_Path, "r") as photocopier_File:
+            _photocopier = json.loads(photocopier_File.read())
 
-def register_or_login(args):
-    # If register is false, login is switched on
+    finally:
+        _photocopier = {"Ink": 100,
+                        "Log":{}
+                        }
+
+        _accounts = {"Admin":
+                     {"Password": hashlib.sha256("admin".encode()).hexdigest(),
+                      "Credits": 1000
+                      }
+                     }
+
+        with open(file_Path, "w") as users_File:
+            users_File.write(json.dumps(_accounts))
+
+        with open(photocopier_Path, "w") as photocopier_File:
+            photocopier_File.write(json.dumps(_photocopier))
+
+    return _accounts, _photocopier
+
+
+def rect_middle(height, scr):
+    """ For drawing rectangles in the middle """
+
+    width = int(scr.get_width()/2)
+
+    rectangle_x = int(scr.get_width()/2 - width/2)
+    rectangle_y = int(scr.get_height()/2)
+
+    rect = draw.rectangle(scr, width, height)
+
+    return rect, rectangle_x, rectangle_y
+
+
+def rect_write_title(rect, string, bottom=False):
+    """ For writing titles at the top of the ui box """
+
+    width = rect.width/2
+    title_x = width - len(string)/2
+    title_y = -2 if not bottom else rect.height + 2
+
+    rect.write(title_x, title_y, string)
+
+
+def register_or_login(kwargs):
+    """ If register is false, login is switched on """
     # Using CSV for this is just for testing, not for real security purposes.
     # Update: Relationship with CSV ended, json is now my new friend...again
 
-    file_location=os.path.join(os.environ["HOMEPATH"],"Desktop\\Accounts.json") # File location.
-    photocopier_location=os.path.join(os.environ["HOMEPATH"],"Desktop\\Photocopier.json")
+    screen = kwargs["screen"]
+    toggle = kwargs["toggle"]
+    height = 4
 
-    screen=args[0]
-    register=args[1]
+    failed_login = ["Invaild username or password, try again.",
+                    "Username already exists"]
+    title = "Login" if toggle else "Register"
 
-    fix_file()
+    _users, _photocopier = fix_file()
 
-    if os.path.exists(file_location) and os.path.exists(photocopier_location): # Check if file existss
-        with open(photocopier_location, "r") as p:
-            photocopier=json.loads(p.read())
+    ui_box, ui_x, ui_y = rect_middle(height, screen)
+    ui_box.draw(ui_x, ui_y)
 
-        with open(file_location, "r") as Accounts:
-            users=json.loads(Accounts.read())
-            rect=draw.rectangle(screen, int(os.get_terminal_size()[0]/2), 4)
+    space_length = len("Username: ")+1*ui_box.width-1
 
-            # Draw box at middle of screen.
-            rect.draw(
-                    int(screen.get_width()/2 - rect.width/2), 
-                    int(screen.get_height()/2 - rect.height/2)
-                    )
+    # Write username and password
+    while True:
+        ui_box.write(2, 1, "Username: "+" "*space_length)
+        ui_box.write(2, 2, "#" * (ui_box.width-2))
+        ui_box.write(2, 3, "Password: ")
 
-            title="Register" if register else "Login"
-            rect.write(int(rect.width/2-len(title)/2), -1, title)
-            rect.write(2, 1, "Username: ")
-            rect.write(1, 2, "-"*rect.width)
-            rect.write(2, 3, "Password: ")
+        rect_write_title(ui_box, title)
 
-            msg="Press enter to continue. Press q to exit."
-            rect.write(int(rect.width/2-len(msg)/2), 6, msg)
+        # Input
+        mode, username, password = ask_info(screen, ui_box,
+                                            _users, _photocopier, toggle)
 
-            rect.to_pos(2+len("Username: "), 1)
-            blacklisted_keys="\t\n\x0b\x0c"
+        if mode == 3:
+            _users[username] = {}
+            _users[username]["Password"] = password
+            _users[username]["Credits"] = 100
 
-            username=""
-            password=""
+            update_file(_users, _photocopier)
 
-            while True:
-                # Input user the username and password
-                info=screen.input(screen, limit=rect.width-len("Username: ")-2)
+        elif mode in (0, 1):
+            rect_write_title(ui_box, failed_login[mode], bottom=True)
+            continue
 
-                if info=="8e35c2cd3bf6641bdb0e2050b76932cbb2e6034a0ddacc1d9bea82a6ba57f7cf": # Quit code
-                    screen.clear_screen()
-                    return True, False
-                elif info=="7ef2fad58d1f2f12f5d78bdf7fc7ba3ad9529010ebd071c14d69394153f6106b": # Reset code
-                        # Clear username and password inputs
-                        # Reusing code 100
-                        rect.write(len("Username: ")+2, 1," "*(rect.width-len("Username: ")))
-                        rect.write(len("Password: ")+2, 3," "*(rect.width-len("Password: ")))
+        break
 
-                        rect.to_pos(2+len("Username: "), 1)
-
-                        username=""
-                        password=""
-                        continue
-
-                for key in info:
-                    if key in blacklisted_keys:
-                        if username!="":
-                            rect.write(2, 1, "Username:"+" "*len(info))
-                            username=""
-                        elif password!="":
-                            rect.write(2, 3, "Password:"+" "*len(info))
-                            password=False
-
-                        continue
-
-                # str because it needs to be in a seperatre memory address
-                if username=="" and info!="":
-                    username=str(info)
-
-                    rect.to_pos(2+len("Password: "), 3)
-
-                elif password=="" and info!="":
-                    password=hashlib.sha256(str(info).encode()).hexdigest() # Convert to sha256 hexdigest       
-
-                    if register:
-                        if username in users.keys():
-                            # Clear
-                            rect.to_pos(1, 6)
-                            screen.clear_line()
-
-                            msg="Username already exists."
-                            rect.write(int(rect.width/2-len(msg)/2), 6, msg)
-
-                            # Clear username and password inputs
-                            rect.write(len("Username: ")+2, 1," "*(rect.width-len("Username: ")))
-                            rect.write(len("Password: ")+2, 3," "*(rect.width-len("Password: ")))
-
-                            rect.to_pos(2+len("Username: "), 1)
-
-                            username=""
-                            password=""
-                
-                            continue
-                        else:
-                            users[username]={"Password":password, "Credits":10}
-                        break
-                    else:
-                        if username in users.keys():
-                            if password==users[username]["Password"]:
-                                return False, (screen, users, username, photocopier)
-                        
-                        # Clear
-                        # I SERIOUSLY HATE COPY AND PASTING THIS THING I ALREADY MADE A FEW LINES ABOVE
-                        rect.to_pos(1, 6)
-                        screen.clear_line()
-
-                        msg="Invaild username or password"
-                        rect.write(int(rect.width/2-len(msg)/2), 6, msg)
-
-                        rect.write(len("Username: ")+2, 1," "*(rect.width-len("Username: ")))
-                        rect.write(len("Password: ")+2, 3," "*(rect.width-len("Password: ")))
-
-                        rect.to_pos(2+len("Username: "), 1)
-
-                        username=""
-                        password=""
-            
-                        continue
+    return False, [screen, _users, username, _photocopier]
 
 
-        # Update file
-        with open(file_location, "w") as f:
-            f.write(json.dumps(users))
-        
-        # Return current users and current user in session
-        return False, (screen, users, username, photocopier)
-    else:
-        # Recreate file putting admin account
-        with open(file_location, "w") as f:
-            f.write(json.dumps({"Admin":{"Password": hashlib.sha256("admin".encode()).hexdigest(), "Credits":1000}}))
+def ask_info(screen, ui_box, _users, _photocopier, toggle):
+    """ For asking the user for username and password,
 
-        with open(photocopier_location, "w") as f:
-            f.write(json.dumps(
-                {"Ink": 100,
-                "Log":{}}
-            ))
+        Mode 0 -> Failed Login
+        Mode 1 -> Failed Register
+        Mode 2 -> Successful Login
+        Mode 3 -> Successful Register
 
-        return register(screen)
+    """
+
+    while True:
+        input_limit = 2+len("Username: ")*ui_box.width-1
+
+        # Clear
+        ui_box.write(1+len("Username: "), 1, " "*input_limit)
+        ui_box.write(1+len("Password: "), 3, " "*input_limit)
+
+        ui_box.to_pos(1+len("Username: "), 1)
+        username = screen.input(screen, limit=input_limit)
+
+        # When user presses Backspace
+        if username is False:
+            continue
+
+        # Otherwise...
+        ui_box.to_pos(1+len("Password: "), 3)
+        password = screen.input(screen, limit=input_limit)
+
+        if password is False:
+            continue
+
+        # Hash it
+        password = str(hashlib.sha256(password.encode()).hexdigest())
+
+        # Checking
+        if toggle:
+            if username in _users:
+                if _users[username]["Password"] == password:
+                    # Login
+                    return 2, username, None  # Successful Login
+
+            return 0, None, None  # Failed login
+
+        # Register
+        if username in _users:
+            return 1, None, None  # Failed register
+
+        return 3, username, str(password)  # Sucessful Register
