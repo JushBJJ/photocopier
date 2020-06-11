@@ -8,6 +8,7 @@ import draw
 import account
 import get_input
 
+test
 
 def Photocopy_Print(kwargs):
     screen = kwargs["screen"]
