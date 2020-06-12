@@ -160,6 +160,8 @@ class menu_screen:
 
                 if not ret:
                     return ret, info
+                else:
+                    return True, None
 
             elif key == "quit":
                 self.screen.clear_screen()
