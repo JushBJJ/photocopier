@@ -8,93 +8,94 @@ import draw
 import account
 import get_input
 
-test
+# rect_middle(height, scr): rect_write_title(rect, string, bottom=False)
+
 
 def Photocopy_Print(kwargs):
+    """ Photocopying or printing """
+
     screen = kwargs["screen"]
     photocopier = kwargs["photocopier"]
     user = kwargs["user"]
     toggle = kwargs["toggle"]
 
     if toggle == 0:
-        action = "Photocopy"
+        title = "Photocopy"
+        process = "Photocopying..."
+        processed = "Photocopied!"
+
     else:
-        action = "Print"
+        title = "Print"
+        process = "Printing..."
+        processed = "Printed!"
+
+    # Create box
+    box, x, y = account.rect_middle(2, screen)
+    box.draw(x, y)
+    account.rect_write_title(box, title)
 
     while True:
-        screen.clear_screen()
-        box = draw.rectangle(screen, int(os.get_terminal_size()[0]/2), 2)
+        box.write(1, 1, "File: "+" "*(box.width-1))
+        box.to_pos(1+len("File: "), 1)
 
-        box.draw(
-            int(screen.get_width()/2 - box.width/2),
-            int(screen.get_height()/2 - box.height/2)
-        )
-        box.write(2, 1, action+"File: ")
+        # User input
+        file_name = screen.input(screen, limit=box.width-len("File: ")+1)
 
-        info = screen.input(screen, limit=box.width-len(action+"File: ")-2)
-
-        if info is False:
+        if file_name is False:
             continue
 
-        if user["Credits"] > 0:
-            box.write(2, 1, " "*box.width)
-            box.write(box.width/2-len(action+"ing "+info+"...") /
-                      2, 1, action+"ing "+info+"...")
-            time.sleep(5)
+        # Log and process photocopying or printing file
+        photocopier[str(datetime.datetime.now())] = title + " " + file_name
 
-            box.write(2, 1, " "*box.width)
-            box.write(box.width/2-len(action+"ed "+info+"!") /
-                      2, 1, action+"ed "+info+"!")
-            time.sleep(5)
+        box.write(1, 1, " "*(box.width-1))
+        box.write(box.width/2-len(process)/2, 1, process)
 
-            photocopier["Log"][str(datetime.datetime.now())
-                               ] = action+"ed "+info
-            photocopier["Ink"] -= 1
-            user["Credits"] -= 1
+        time.sleep(3)
 
-        else:
-            box.write(2, 1, " "*box.width)
-            box.write(box.width/2-len("Not enough credits!") /
-                      2, 1, "Not enough credits!")
-            time.sleep(5)
+        box.write(1, 1, " "*(box.width-1))
+        box.write(box.width/2-len(processed)/2, 1, processed)
 
+        time.sleep(3)
         break
 
     return False, [screen, photocopier, user]
 
 
 def Add_Credit(kwargs):
+    """ lol i copied and pasted the code from the photcopier_print function
+    cause it just works """
+
     screen = kwargs["screen"]
     photocopier = kwargs["photocopier"]
     user = kwargs["user"]
 
+    title = "Add credit"
+
+    # Create box
+    box, x, y = account.rect_middle(2, screen)
+    box.draw(x, y)
+    account.rect_write_title(box, title)
+
     while True:
-        screen.clear_screen()
-        box = draw.rectangle(screen, int(os.get_terminal_size()[0]/2), 2)
+        box.write(1, 1, "Amount: "+" "*(box.width-1))
+        box.to_pos(1+len("Amount: "), 1)
 
-        box.draw(
-            int(screen.get_width()/2 - box.width/2),
-            int(screen.get_height()/2 - box.height/2)
-        )
+        # User input
+        credit = screen.input(screen, limit=box.width-len("Amount: ")+1)
 
-        box.write(2, 4, "Please put an invaild number")
-        box.write(2, 1, "Add credit: ")
-
-        inpt = screen.input(screen, limit=box.width-len("Add credit File: ")-2)
-
-        if inpt is False:
-            break
-
-        try:
-            inpt = int(inpt)
-
-            if not inpt > 0:
-                continue
-        except:
+        if credit is False:
             continue
+       
+        if not credit.isdigit():
+            box.write(int(box.width/len("Put an invaild number!")/2), 3, "Put an invaild number!")
+        else:
+            credit = int(credit)
+            user["Credits"] += credit
 
-        user["Credits"] += inpt
-        break
+            # Log and process photocopying or printing file
+            photocopier[str(datetime.datetime.now())] = title + str(credit)
+            break
+        continue
 
     screen.clear_screen()
     return False, [screen, photocopier, user]
@@ -127,7 +128,8 @@ def Settings(kwargs):
     while True:
         ret, info = home_menu.select_menu()
 
-        if ret == True:
+        if ret:
+            account.update_file(users, photocopier)
             break
         else:
             screen = info[0]
@@ -156,43 +158,43 @@ def show_logs(kwargs):
 
 
 def add_ink(kwargs):
-    # I insanely hate copy and pasting old code but it works fine.
+    """ lol i copied and pasted the code from the photcopier_print function
+    cause it just works """
+
     screen = kwargs["screen"]
     photocopier = kwargs["photocopier"]
     user = kwargs["user"]
 
+    title = "Add Ink"
+
+    # Create box
+    box, x, y = account.rect_middle(2, screen)
+    box.draw(x, y)
+    account.rect_write_title(box, title)
+
     while True:
-        screen.clear_screen()
-        box = draw.rectangle(screen, int(os.get_terminal_size()[0]/2), 2)
+        box.write(1, 1, "Amount: "+" "*(box.width-1))
+        box.to_pos(1+len("Amount: "), 1)
 
-        box.draw(
-            int(screen.get_width()/2 - box.width/2),
-            int(screen.get_height()/2 - box.height/2)
-        )
+        # User input
+        ink = screen.input(screen, limit=box.width-len("Amount: ")+1)
 
-        box.write(2, 1, "Add amount of ink: ")
-        box.write(2, 4, "Please put an invaild number")
-
-        inpt = screen.input(screen, limit=box.width -
-                            len("Add amount of ink: ")-2)
-
-        if inpt is False:
-            break
-
-        try:
-            inpt = int(inpt)
-
-            if not inpt > 0:
-                continue
-        except:
+        if ink is False:
             continue
+       
+        if not ink.isdigit():
+            box.write(int(box.width/len("Put an invaild number!")/2), 3, "Put an invaild number!")
+        else:
+            ink = int(ink)
+            photocopier["Ink"] += ink
 
-        photocopier["Ink"] += inpt
-        break
+            # Log and process photocopying or printing file
+            photocopier[str(datetime.datetime.now())] = title + str(ink)
+            break
+        continue
 
     screen.clear_screen()
-
-    return False, [screen, user, photocopier]
+    return False, [screen, photocopier, user]
 
 
 def Exit_Photocopier(args):
@@ -227,12 +229,13 @@ def home(screen, users, username, photocopier):
                        users=users, username=username)
 
     # Exit
-    home_menu.add_menu("Exit", Exit_Photocopier, None)
+    home_menu.add_menu("Exit", Exit_Photocopier, False, yes="yes")
 
     while True:
         ret, info = home_menu.select_menu()
 
-        if ret == True:
+        if ret:
+            account.update_file(users, photocopier)
             break
         else:
             screen = info[0]
@@ -244,4 +247,4 @@ def home(screen, users, username, photocopier):
 
             account.update_file(users, photocopier)
 
-    return True, None
+    return False, None
