@@ -17,15 +17,17 @@ photocopier_Path = os.path.join(
 
 
 def update_file(users, _photocopier):
-    fix_file()
-
+    """ For Updating files to the latest thingy """
     with open(file_Path, "w") as f:
         f.write(json.dumps(users))
 
     with open(photocopier_Path, "w") as f:
         f.write(json.dumps(_photocopier))
 
+
 def fix_file():
+    """ For fixing files if they don't exist while also reading them. """
+
     _accounts = None
     _photocopier = None
 
@@ -38,7 +40,7 @@ def fix_file():
 
     finally:
         _photocopier = {"Ink": 100,
-                        "Log":{}
+                        "Log": {}
                         }
 
         _accounts = {"Admin":
@@ -73,7 +75,7 @@ def rect_write_title(rect, string, bottom=False):
     """ For writing titles at the top of the ui box """
 
     width = rect.width/2
-    title_x = width - len(string)/2
+    title_x = int(width - len(string)/2)
     title_y = -2 if not bottom else rect.height + 2
 
     rect.write(title_x, title_y, string)
@@ -159,7 +161,7 @@ def ask_info(screen, ui_box, _users, _photocopier, toggle):
             continue
 
         # Hash it
-        password = str(hashlib.sha256(password.encode()).hexdigest())
+        password = hashlib.sha256(password.encode()).hexdigest()
 
         # Checking
         if toggle:
